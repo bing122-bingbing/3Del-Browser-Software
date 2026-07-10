@@ -1,0 +1,6 @@
+{
+  "name": "3Del",
+  "description": "Modern, lightweight 3D modeling application for the web.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
