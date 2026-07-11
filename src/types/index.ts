@@ -4,7 +4,7 @@ export type TransformMode = 'translate' | 'rotate' | 'scale';
 export type ViewportMode = 'perspective' | 'orthographic';
 export type ShadingMode = 'wireframe' | 'solid' | 'material' | 'rendered';
 
-export type ModifierType = 'Subdivision' | 'Bevel' | 'Skin';
+export type ModifierType = 'Subdivision' | 'Bevel' | 'Skin' | 'Mirror' | 'Array' | 'Solidify' | 'Decimate' | 'Bend' | 'Twist' | 'Taper' | 'Noise' | 'Lattice' | 'Wave';
 
 export interface Modifier {
   id: string;
@@ -16,7 +16,8 @@ export interface Modifier {
 export interface SceneObject {
   id: string;
   name: string;
-  type: 'Mesh' | 'Light' | 'Camera' | 'Empty' | 'Curve' | 'Bone';
+  type: 'Mesh' | 'Light' | 'Camera' | 'Empty' | 'Curve' | 'Bone' | 'Parent';
+  parentId?: string;
   geometryType?: 'Box' | 'Sphere' | 'Cylinder' | 'Plane' | 'Cone' | 'Torus' | 'Text' | 'Imported';
   fileUrl?: string;
   fileExt?: string;

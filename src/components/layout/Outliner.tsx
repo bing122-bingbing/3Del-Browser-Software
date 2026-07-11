@@ -3,12 +3,14 @@ import { useStore } from '../../store/useStore';
 import { Box, Circle, Cylinder, Lightbulb, Camera, CircleDashed } from 'lucide-react';
 
 export default function Outliner() {
-  const { objects, selectedIds, selectObject, removeObject, copy, paste } = useStore();
+  const { objects, selectedIds, selectObject, removeObject, copy, paste, updateObject } = useStore();
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; objectId: string | null } | null>(null);
+  const [draggedId, setDraggedId] = useState<string | null>(null);
 
   const getIcon = (type: string, geoType?: string) => {
     if (type === 'Light') return <Lightbulb size={12} />;
     if (type === 'Camera') return <Camera size={12} />;
+    if (type === 'Parent') return <div className="w-2.5 h-2.5 border border-current rounded-sm border-dashed" />;
     if (geoType === 'Sphere') return <Circle size={12} />;
     if (geoType === 'Cylinder') return <Cylinder size={12} />;
     if (geoType === 'Plane') return <div className="w-2.5 h-2.5 border border-current mx-[1px]" />;
@@ -29,6 +31,50 @@ export default function Outliner() {
     setContextMenu({ x: e.clientX, y: e.clientY, objectId: objId });
   };
 
+  const handleDragStart = (e: React.DragEvent, id: string) => {
+    e.dataTransfer.setData('text/plain', id);
+    setDraggedId(id);
+  };
+
+  const handleDrop = (e: React.DragEvent, targetId: string | undefined) => {
+    e.preventDefault();
+    const sourceId = e.dataTransfer.getData('text/plain');
+    if (sourceId && sourceId !== targetId) {
+      // Prevent circular parenting
+      let curr = targetId;
+      while (curr) {
+        if (curr === sourceId) return;
+        curr = objects[curr]?.parentId;
+      }
+      updateObject(sourceId, { parentId: targetId });
+    }
+    setDraggedId(null);
+  };
+
+  const renderTree = (parentId?: string, level = 0) => {
+    const children = Object.values(objects).filter(obj => obj.parentId === parentId);
+    return children.map(obj => (
+      <React.Fragment key={obj.id}>
+        <div
+          draggable
+          onDragStart={(e) => handleDragStart(e, obj.id)}
+          onDragOver={(e) => e.preventDefault()}
+          onDrop={(e) => { e.stopPropagation(); handleDrop(e, obj.id); }}
+          onClick={(e) => { e.stopPropagation(); selectObject(obj.id, e.ctrlKey || e.metaKey); }}
+          onContextMenu={(e) => { e.stopPropagation(); handleContextMenu(e, obj.id); }}
+          className={`object-row flex items-center px-2 py-0.5 rounded cursor-pointer select-none border border-transparent ${
+            selectedIds.includes(obj.id) ? 'bg-blue-600/30 text-white' : 'opacity-80 hover:bg-[#333333]'
+          } ${draggedId === obj.id ? 'opacity-50' : ''}`}
+          style={{ paddingLeft: `${0.5 + level * 1}rem` }}
+        >
+          <span className="mr-2 opacity-70">{getIcon(obj.type, obj.geometryType)}</span>
+          <span className="truncate">{obj.name}</span>
+        </div>
+        {renderTree(obj.id, level + 1)}
+      </React.Fragment>
+    ));
+  };
+
   return (
     <div className="flex-1 flex flex-col relative" onContextMenu={(e) => {
       // Allow context menu on empty space to paste
@@ -38,20 +84,12 @@ export default function Outliner() {
       <div className="h-8 px-3 flex items-center justify-between border-b border-black bg-[#252525] text-[10px] font-bold uppercase tracking-wider">
         <span>Scene Outliner</span>
       </div>
-      <div className="p-2 text-[11px] space-y-1 overflow-y-auto flex-1">
-        {Object.values(objects).map((obj) => (
-          <div
-            key={obj.id}
-            onClick={(e) => selectObject(obj.id, e.ctrlKey || e.metaKey)}
-            onContextMenu={(e) => { e.stopPropagation(); handleContextMenu(e, obj.id); }}
-            className={`object-row flex items-center px-2 py-0.5 rounded cursor-pointer select-none ${
-              selectedIds.includes(obj.id) ? 'bg-blue-600/30 text-white' : 'opacity-80 hover:bg-[#333333]'
-            }`}
-          >
-            <span className="mr-2">{getIcon(obj.type, obj.geometryType)}</span>
-            <span className="truncate">{obj.name}</span>
-          </div>
-        ))}
+      <div 
+        className="p-2 text-[11px] space-y-0.5 overflow-y-auto flex-1 pb-10"
+        onDragOver={(e) => e.preventDefault()}
+        onDrop={(e) => handleDrop(e, undefined)}
+      >
+        {renderTree(undefined)}
         {Object.keys(objects).length === 0 && (
           <div className="text-[11px] text-gray-500 text-center mt-4 opacity-80">Scene is empty</div>
         )}

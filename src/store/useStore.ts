@@ -111,6 +111,12 @@ export const useStore = create<AppState>((set) => ({
     set((state) => {
       const newObjects = { ...state.objects };
       delete newObjects[id];
+      // Reset parentId for children
+      Object.values(newObjects).forEach(obj => {
+        if (obj.parentId === id) {
+          newObjects[obj.id] = { ...obj, parentId: undefined };
+        }
+      });
       const nextHistory = state.history.slice(0, state.historyIndex + 1);
       nextHistory.push(newObjects);
       if (nextHistory.length > 50) nextHistory.shift();
@@ -162,7 +168,7 @@ export const useStore = create<AppState>((set) => ({
   setSnapDistance: (snapDistance) => set({ snapDistance }),
 }));
 
-export const createPrimitive = (type: SceneObject['geometryType'] | 'Curve' | 'Bone'): SceneObject => {
+export const createPrimitive = (type: SceneObject['geometryType'] | 'Curve' | 'Bone' | 'Parent'): SceneObject => {
   const nameMap: Record<string, string> = {
     Box: 'Cube',
     Sphere: 'Sphere',
@@ -172,18 +178,20 @@ export const createPrimitive = (type: SceneObject['geometryType'] | 'Curve' | 'B
     Torus: 'Torus',
     Text: 'Text',
     Curve: 'Curve',
-    Bone: 'Bone'
+    Bone: 'Bone',
+    Parent: 'Parent'
   };
 
   let objType: SceneObject['type'] = 'Mesh';
   if (type === 'Curve') objType = 'Curve';
   if (type === 'Bone') objType = 'Bone';
+  if (type === 'Parent') objType = 'Parent';
 
   return {
     id: uuidv4(),
     name: nameMap[type || 'Box'] || type || 'Object',
     type: objType,
-    geometryType: (type !== 'Curve' && type !== 'Bone') ? type : undefined,
+    geometryType: (type !== 'Curve' && type !== 'Bone' && type !== 'Parent') ? type : undefined,
     position: [0, 0, 0],
     rotation: [0, 0, 0],
     scale: [1, 1, 1],

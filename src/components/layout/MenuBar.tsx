@@ -134,6 +134,9 @@ export default function MenuBar() {
             <button onClick={() => handleAdd('Bone')} className="w-full text-left px-4 py-1 hover:bg-orange-500 hover:text-black flex items-center gap-2">
               <Bone size={14} /> Bone
             </button>
+            <button onClick={() => handleAdd('Parent')} className="w-full text-left px-4 py-1 hover:bg-orange-500 hover:text-black flex items-center gap-2">
+              <div className="w-3 h-3 border border-current rounded-sm border-dashed"></div> Parent
+            </button>
           </div>
         </div>
         <div className="relative group">
